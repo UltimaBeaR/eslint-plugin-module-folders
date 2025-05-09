@@ -1,0 +1,20 @@
+{
+  "folders": [
+    {
+      "name": "Root",
+      "path": "."
+    },
+    {
+      "name": "Main",
+      "path": "main"
+    }
+  ],
+  "settings": {
+    "terminal.integrated.cwd": "${workspaceFolder}",
+
+    "typescript.tsdk": "./main/node_modules/typescript/lib",
+
+    "typescript.enablePromptUseWorkspaceTsdk": true,
+    "explorer.compactFolders": false
+  }
+}
