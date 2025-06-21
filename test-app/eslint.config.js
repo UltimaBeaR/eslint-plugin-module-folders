@@ -17,15 +17,16 @@ export default tseslint.config(
     },
     plugins: {
       "react-hooks": reactHooks,
-      "react-refresh": reactRefresh,
+      // "react-refresh": reactRefresh,
       "module-folders": moduleFolders,
     },
     rules: {
       ...reactHooks.configs.recommended.rules,
-      "react-refresh/only-export-components": [
-        "warn",
-        { allowConstantExport: true },
-      ],
+      // "react-refresh/only-export-components": [
+      //   "warn",
+      //   { allowConstantExport: true },
+      // ],
+      "module-folders/no-nested-modules": "error",
       "module-folders/correct-imports": "error",
     },
   }

@@ -20,6 +20,8 @@ export const correctImportsRule = {
  * @type {import('eslint').Rule.RuleModule['create']}
  */
 function create(context) {
+  return {};
+
   return {
     ImportDeclaration(node) {
       const imporerFileName = context.filename;
