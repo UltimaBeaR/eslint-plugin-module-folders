@@ -1,3 +1,4 @@
+import { PRIVATE_MODULE_DIR_SEGMENT } from "./internal/constants.js";
 import { getFileInfo } from "./internal/getFileInfo.js";
 
 /**
@@ -20,11 +21,16 @@ export const noNestedModulesRule = {
 function create(context) {
   return {
     Program(node) {
-      const fileInfo = getFileInfo(context.filename);
+      const thisFileInfo = getFileInfo(context.filename);
 
-      console.log("###### Program", {
-        fileInfo,
-      });
+      if (thisFileInfo.hasNestedPrivateModuleDirSegments) {
+        context.report({
+          node,
+          message:
+            "Nested " + PRIVATE_MODULE_DIR_SEGMENT + " folders are not allowed",
+        });
+        return;
+      }
     },
   };
 }

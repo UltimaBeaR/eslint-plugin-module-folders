@@ -1,7 +1,7 @@
 import path from "node:path";
-import { projectNodeModulesAbsDir } from "./internal/paths.js";
 import { resolveTsImport } from "./internal/resolveTsImport.js";
-import { getTsFileModuleInfo } from "./internal/getTsFileModuleInfo.js";
+import { getFileInfo } from "./internal/getFileInfo.js";
+import { PRIVATE_MODULE_DIR_SEGMENT } from "./internal/constants.js";
 /**
  * @type {import('eslint').Rule.RuleModule}
  */
@@ -20,11 +20,8 @@ export const correctImportsRule = {
  * @type {import('eslint').Rule.RuleModule['create']}
  */
 function create(context) {
-  return {};
-
   return {
     ImportDeclaration(node) {
-      const imporerFileName = context.filename;
       const importingExpression = node.source.value;
 
       // Если путь к файлу импорта резолвится не как строка то пропускаем.
@@ -33,73 +30,170 @@ function create(context) {
         return;
       }
 
-      const importingFileName = resolveTsImport(
-        importingExpression,
-        imporerFileName
-      );
+      const validated = validateMainRules(context, importingExpression);
 
-      // undefined будет если это не js/ts файл а файл ресурсов/стилей
-      // такие файлы пропускаем
-      if (importingFileName === undefined) {
-        return;
-      }
-
-      // Пропускаем импорты из node_modules
-      if (importingFileName.startsWith(projectNodeModulesAbsDir + path.sep)) {
-        return;
-      }
-
-      const importingModuleInfo = getTsFileModuleInfo(importingFileName);
-      const importerModuleInfo = getTsFileModuleInfo(imporerFileName);
-
-      /*
-        TODO:
-        Общая логика правил, не только для этого правила конкретного.
-        Можно попробовать ее вынести в хэлпер и переиспользовать в разных правилах.
-        Ну либо пусть будет одно правило но с разными сообщениями.
-
-        Отдельное правило, что в определенной папке должны быть ТОЛЬКО модули и больше никаких других файлов
-          if текущий файл находится в этой папке (из списка, должен задаваться конфигом), при этом
-          этот файл не файл модуля и в его пути нигде нету модулей и на уровне его основной папки нет файлов-модулей
-            ошибка - найден файл вне модулей, хотя папка должна быть только с модулями внутри
-          else
-            все ок.
-
-        Отдельное правило, проверяющее сам файл текущий на коммент @module топ левел.
-          Проверяем по кэшу модульный ли этот файл, если нет, игнорим этот файл (значит коммент не топ левел)
-          if в кэше есть - проверяем что выше по пути импорта нет других модулей.
-            if есть
-              ругаемся что не может быть вложенных модулей.
-
-        if импортируемый файл это модуль
-          if этот модуль является тем же модулем откуда идет импорт (ситуация если импорт вида ../index.ts)
-            то пишем что файлы модулей могут быть использованы только для внешнего кода
-          else
-            все ок - это импорт чужого модуля (тут дальше можно правила fsd слайсов и т.д. подключать)
-        else
-          if в пути импорта где то есть модуль (ищем только первый, не важно какой)
-            if этот модуль является тем же модулем откуда идет импорт (в случае если текущий файл тоже в модуле)
-              все ок - импорт из кишков своего же модуля
-            else
-              ругаемся что доступ напрямую к файла из кишков модуля идет напрямую а не через импорт файла модуля.
-          else
-            все ок - импорт из какого-то кода, который вообще не усавствует в модульной системе
-
-      */
-
-      console.log("###### ImportDeclaration", {
-        imporerFileName,
-        importerModuleInfo,
-        importingFileName,
-        importingModuleInfo,
-      });
-
-      if (false) {
+      if (!validated) {
         context.report({
           node,
-          message: "Не нашел коммент // @module-folder",
+          message:
+            "Cannot import from someone else's private " +
+            PRIVATE_MODULE_DIR_SEGMENT +
+            " folder. Use public import path instead",
+        });
+      }
+    },
+
+    ImportExpression(node) {
+      if (node.source.type !== "Literal") {
+        // Если в динамическом импорте не используется литерал как путь импорта -
+        // такое линтер будет тут пропускать, т.к. неизвестно что там за путь может
+        // в рантайме получиться. Проверки будут делаться только на константно заданные пути (литералы)
+
+        return;
+      }
+
+      const importingExpression = node.source.value;
+
+      // Если путь к файлу импорта резолвится не как строка то пропускаем.
+      // Не знаю что это за кейсы такие, но вроде как в обычном случае всегда тут строка
+      if (typeof importingExpression !== "string") {
+        return;
+      }
+
+      const validated = validateMainRules(context, importingExpression);
+
+      if (!validated) {
+        context.report({
+          node,
+          message:
+            "Cannot import from someone else's private " +
+            PRIVATE_MODULE_DIR_SEGMENT +
+            " folder. Use public import path instead",
+        });
+      }
+    },
+
+    ExportAllDeclaration(node) {
+      const importingExpression = node.source.value;
+
+      // Если путь к файлу импорта резолвится не как строка то пропускаем.
+      // Не знаю что это за кейсы такие, но вроде как в обычном случае всегда тут строка
+      if (typeof importingExpression !== "string") {
+        return;
+      }
+
+      const validated = validateMainRules(context, importingExpression);
+
+      if (!validated) {
+        context.report({
+          node,
+          message:
+            "Cannot import from someone else's private " +
+            PRIVATE_MODULE_DIR_SEGMENT +
+            " folder. Use public import path instead",
+        });
+      }
+    },
+
+    ExportNamedDeclaration(node) {
+      const importingExpression = node.source?.value;
+
+      // Если путь к файлу импорта резолвится не как строка то пропускаем.
+      // Не знаю что это за кейсы такие, но вроде как в обычном случае всегда тут строка
+      if (typeof importingExpression !== "string") {
+        return;
+      }
+
+      const validated = validateMainRules(context, importingExpression);
+
+      if (!validated) {
+        context.report({
+          node,
+          message:
+            "Cannot import from someone else's private " +
+            PRIVATE_MODULE_DIR_SEGMENT +
+            " folder. Use public import path instead",
         });
       }
     },
   };
+}
+
+/**
+ * @param {import('eslint').Rule.RuleContext} context
+ * @param {string} importingExpression
+ */
+function validateMainRules(context, importingExpression) {
+  // TODO: сделать поддержку импортов не только тайпскрипта
+  const importingFileName = resolveTsImport(
+    importingExpression,
+    context.filename
+  );
+
+  if (importingFileName === undefined) {
+    // undefined будет если это не js/ts файл а файл ресурсов/стилей
+    // такие файлы пропускаем
+
+    return true;
+  }
+
+  const importingFileInfo = getFileInfo(importingFileName);
+  const thisFileInfo = getFileInfo(context.filename);
+
+  if (
+    thisFileInfo.hasNestedPrivateModuleDirSegments ||
+    importingFileInfo.hasNestedPrivateModuleDirSegments
+  ) {
+    // Если один из файлов с неправильно определенной структурой модулей - прекращаем обработку любых правил про модули
+
+    return true;
+  }
+
+  // TODO: вместо этого должен быть include/exclude конфиг
+  // по дефолту будет exclude: "/node_modules/**" или типа того
+  // и тут как раз будет проверяться - нужно ли процессить файл
+  // (или даже раньше, в самом начале, до получения инфы о файле вообще.
+  // Но делать это надо по относительному от корня проекту пути)
+  //
+  // Пропускаем импорты из node_modules
+  if (importingFileInfo.relDir.startsWith("node_modules" + path.sep)) {
+    return true;
+  }
+
+  if (importingFileInfo.isInPrivateModuleDir) {
+    // Если импортируемый файл находится внутри приватной части папки-модуля
+
+    const importingRelModuleDir = importingFileInfo.relModuleDir;
+
+    if (
+      thisFileInfo.isInPrivateModuleDir &&
+      thisFileInfo.relModuleDir === importingRelModuleDir
+    ) {
+      // Если идет импорт в кишки модуля из кишков этого же самого модуля
+      // то это нормальная ситуация - такое пропускаем
+
+      return true;
+    }
+
+    if (
+      !thisFileInfo.isInPrivateModuleDir &&
+      (thisFileInfo.relDir === importingRelModuleDir ||
+        thisFileInfo.relDir.startsWith(importingRelModuleDir + path.sep))
+    ) {
+      // Если идет импорт в кишки модуля из файлов публичного апи этого же самого модуля
+      // то это нормальная ситуация и такое пропускаем.
+      // Публичное апи никогда не находится в приватной части модуля и всегда находится
+      // либо в папке модуля (не приватной, а основной), либо в подпапках в этой папке, но
+      // не внутри приватной части.
+
+      return true;
+    }
+
+    // Если дошли сюда значит это импорт из приватной части модуля из тех мест откуда
+    // импорт запрещен
+
+    return false;
+  }
+
+  return true;
 }

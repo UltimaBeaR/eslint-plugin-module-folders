@@ -1,5 +1,7 @@
 import path from "path";
 import { projectAbsRootDir } from "./paths.js";
+import { PRIVATE_MODULE_DIR_SEGMENT } from "./constants.js";
+import { pathToSegments, segmentsToPath } from "./utils.js";
 
 /**
  * @param {string} fileName
@@ -11,15 +13,21 @@ export function getFileInfo(fileName) {
   const relDir = path.relative(projectAbsRootDir, absDir);
 
   const relDirSegments = pathToSegments(relDir);
+
+  const hasNestedPrivateModuleDirSegments =
+    checkHasNestedPrivateModuleDirSegments(relDirSegments);
+
   const firstPrivateModuleDirSegments =
     getFirstPrivateModuleDirSegments(relDirSegments);
   const firstPrivateModuleRelDir = segmentsToPath(
     firstPrivateModuleDirSegments
   );
 
+  const isInPrivateModuleDir = firstPrivateModuleRelDir !== "";
+
   let relModuleDir = "";
 
-  if (firstPrivateModuleRelDir !== "") {
+  if (isInPrivateModuleDir) {
     relModuleDir = path.dirname(firstPrivateModuleRelDir);
   }
 
@@ -29,6 +37,8 @@ export function getFileInfo(fileName) {
     relDir,
     firstPrivateModuleRelDir,
     relModuleDir,
+    isInPrivateModuleDir,
+    hasNestedPrivateModuleDirSegments,
   };
 }
 
@@ -50,20 +60,18 @@ function getFirstPrivateModuleDirSegments(segments) {
   return [];
 }
 
-const PRIVATE_MODULE_DIR_SEGMENT = "_module";
-
-/**
- * @param {string} pathStr
- * @returns {string[]}
- */
-function pathToSegments(pathStr) {
-  return pathStr.split(path.sep).filter((segment) => segment !== "");
-}
-
 /**
  * @param {string[]} segments
- * @returns {string}
+ * @returns {boolean}
  */
-function segmentsToPath(segments) {
-  return segments.join(path.sep);
+function checkHasNestedPrivateModuleDirSegments(segments) {
+  let privateModuleDirSegmentsCount = 0;
+
+  for (const segment of segments) {
+    if (segment === PRIVATE_MODULE_DIR_SEGMENT) {
+      privateModuleDirSegmentsCount++;
+    }
+  }
+
+  return privateModuleDirSegmentsCount > 1;
 }
