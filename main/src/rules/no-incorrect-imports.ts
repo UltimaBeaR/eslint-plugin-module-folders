@@ -1,6 +1,6 @@
 import path from "node:path";
 import { resolveTsImport } from "../internal/resolveTsImport";
-import { getFileInfo } from "../internal/getFileInfo";
+import { getCodeFileInfo } from "../internal/codeFileInfo";
 import { PRIVATE_MODULE_DIR_SEGMENT } from "../internal/constants";
 import { Rule } from "eslint";
 import { tryImportFromModuleFoldersConfig } from "../internal/projectConfigs/moduleFoldersConfig";
@@ -139,12 +139,12 @@ function validateMainRules(
     return true;
   }
 
-  const importingFileInfo = getFileInfo(importingFileName);
-  const thisFileInfo = getFileInfo(context.filename);
+  const importingFileInfo = getCodeFileInfo(importingFileName);
+  const thisFileInfo = getCodeFileInfo(context.filename);
 
   if (
-    thisFileInfo.hasNestedPrivateModuleDirSegments ||
-    importingFileInfo.hasNestedPrivateModuleDirSegments
+    thisFileInfo.error !== undefined ||
+    importingFileInfo.error !== undefined
   ) {
     // Если один из файлов с неправильно определенной структурой модулей - прекращаем обработку любых правил про модули
 
@@ -162,31 +162,26 @@ function validateMainRules(
     return true;
   }
 
-  if (importingFileInfo.isInPrivateModuleDir) {
-    // Если импортируемый файл находится внутри приватной части папки-модуля
+  const thisModuleFolder = thisFileInfo.moduleFolder;
+  const importingModuleFolder = importingFileInfo.moduleFolder;
 
-    const importingRelModuleDir = importingFileInfo.relModuleDir;
+  console.log("---", {
+    self: { name: thisFileInfo.absFileName, ...thisModuleFolder },
+    imp: { name: importingFileInfo.absFileName, ...importingModuleFolder },
+  });
+
+  if (
+    importingModuleFolder.type === "moduleFolder" &&
+    importingModuleFolder.isInPrivatePart
+  ) {
+    // Если импортируем из приватной части
 
     if (
-      thisFileInfo.isInPrivateModuleDir &&
-      thisFileInfo.relModuleDir === importingRelModuleDir
+      thisModuleFolder.type === "moduleFolder" &&
+      thisModuleFolder.relModuleDir === importingModuleFolder.relModuleDir
     ) {
-      // Если идет импорт в кишки модуля из кишков этого же самого модуля
-      // то это нормальная ситуация - такое пропускаем
-
-      return true;
-    }
-
-    if (
-      !thisFileInfo.isInPrivateModuleDir &&
-      (thisFileInfo.relDir === importingRelModuleDir ||
-        thisFileInfo.relDir.startsWith(importingRelModuleDir + path.sep))
-    ) {
-      // Если идет импорт в кишки модуля из файлов публичного апи этого же самого модуля
-      // то это нормальная ситуация и такое пропускаем.
-      // Публичное апи никогда не находится в приватной части модуля и всегда находится
-      // либо в папке модуля (не приватной, а основной), либо в подпапках в этой папке, но
-      // не внутри приватной части.
+      // Если импортируем кишки модуля из любой части (приватной или нет) этого же самого модуля
+      // то такое пропускаем (это нормальная ситуация)
 
       return true;
     }
