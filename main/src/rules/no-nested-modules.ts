@@ -1,10 +1,8 @@
-import { PRIVATE_MODULE_DIR_SEGMENT } from "./internal/constants.js";
-import { getFileInfo } from "./internal/getFileInfo.js";
+import { Rule } from "eslint";
+import { PRIVATE_MODULE_DIR_SEGMENT } from "../internal/constants";
+import { getFileInfo } from "../internal/getFileInfo";
 
-/**
- * @type {import('eslint').Rule.RuleModule}
- */
-export const noNestedModulesRule = {
+export const noNestedModulesRule: Rule.RuleModule = {
   meta: {
     type: "problem",
     docs: {
@@ -15,10 +13,7 @@ export const noNestedModulesRule = {
   create,
 };
 
-/**
- * @type {import('eslint').Rule.RuleModule['create']}
- */
-function create(context) {
+function create(context: Rule.RuleContext): Rule.NodeListener {
   return {
     Program(node) {
       const thisFileInfo = getFileInfo(context.filename);

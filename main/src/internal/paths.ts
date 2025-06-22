@@ -3,7 +3,7 @@ import path from "node:path";
 // -------------------- пути текущего проекта (проект с плагином)
 
 /** Путь к текущему проекту (проект с плагином) */
-export const pluginProjectRootAbsDir = path.join(import.meta.dirname, "../..");
+export const pluginProjectRootAbsDir = path.join(__dirname, "../..");
 
 export const pluginProjectPackageJsonAbsDir = path.join(
   pluginProjectRootAbsDir,

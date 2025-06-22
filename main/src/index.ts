@@ -1,7 +1,8 @@
-import { correctImportsRule } from "./correctImportsRule.js";
-import { parsedPackageJson } from "./internal/parsedPackageJson.js";
-//import "./internal/moduleTree.js";
-import { noNestedModulesRule } from "./noNestedModulesRule.js";
+import { ESLint } from "eslint";
+
+import { parsedPackageJson } from "./internal/parsedPackageJson";
+import { noNestedModulesRule } from "./rules/no-nested-modules";
+import { correctImportsRule } from "./rules/correct-imports";
 
 // TODO: переработка. Пока старый вариант забрасываю и оставляю его под тегом before rethinking
 // новый вариант это ТОЛЬКО поддержка _module папок (либо сконигурировать другое имя)
@@ -38,6 +39,8 @@ import { noNestedModulesRule } from "./noNestedModulesRule.js";
 // тогда без разницы будет есть там вложенные или нет - все внутренности считаются обычными папками.
 // а отдельное правило на вложенности уже подсветит неправлиьные модули отдельно.
 
+// TODO: попробовать сделать функционал автофикса там где он может понадобиться.
+
 // TODO:
 // отдельно по оформлению этой либы. Когда хотя бы базовый функционал правил импорта будет тут готов (без конфигов и т.д.)
 // можно глянуть в либы для создания мультипакетных проектов и глянуть как их конфигурировать
@@ -64,10 +67,7 @@ import { noNestedModulesRule } from "./noNestedModulesRule.js";
 
 console.log("module-folders init");
 
-/**
- * @type {import('eslint').ESLint.Plugin}
- */
-const plugin = {
+const plugin: ESLint.Plugin = {
   meta: {
     name: parsedPackageJson.name,
     version: parsedPackageJson.version,
@@ -79,4 +79,4 @@ const plugin = {
   },
 };
 
-export default plugin;
+module.exports = { ...plugin };

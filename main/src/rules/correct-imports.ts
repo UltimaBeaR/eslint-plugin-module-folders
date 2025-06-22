@@ -1,11 +1,10 @@
 import path from "node:path";
-import { resolveTsImport } from "./internal/resolveTsImport.js";
-import { getFileInfo } from "./internal/getFileInfo.js";
-import { PRIVATE_MODULE_DIR_SEGMENT } from "./internal/constants.js";
-/**
- * @type {import('eslint').Rule.RuleModule}
- */
-export const correctImportsRule = {
+import { resolveTsImport } from "../internal/resolveTsImport";
+import { getFileInfo } from "../internal/getFileInfo";
+import { PRIVATE_MODULE_DIR_SEGMENT } from "../internal/constants";
+import { Rule } from "eslint";
+
+export const correctImportsRule: Rule.RuleModule = {
   meta: {
     type: "problem",
     docs: {
@@ -16,10 +15,7 @@ export const correctImportsRule = {
   create,
 };
 
-/**
- * @type {import('eslint').Rule.RuleModule['create']}
- */
-function create(context) {
+function create(context: Rule.RuleContext): Rule.NodeListener {
   return {
     ImportDeclaration(node) {
       const importingExpression = node.source.value;
@@ -119,11 +115,10 @@ function create(context) {
   };
 }
 
-/**
- * @param {import('eslint').Rule.RuleContext} context
- * @param {string} importingExpression
- */
-function validateMainRules(context, importingExpression) {
+function validateMainRules(
+  context: Rule.RuleContext,
+  importingExpression: string
+) {
   // TODO: сделать поддержку импортов не только тайпскрипта
   const importingFileName = resolveTsImport(
     importingExpression,

@@ -1,12 +1,9 @@
 import path from "path";
-import { projectAbsRootDir } from "./paths.js";
-import { PRIVATE_MODULE_DIR_SEGMENT } from "./constants.js";
-import { pathToSegments, segmentsToPath } from "./utils.js";
+import { projectAbsRootDir } from "./paths";
+import { PRIVATE_MODULE_DIR_SEGMENT } from "./constants";
+import { pathToSegments, segmentsToPath } from "./utils";
 
-/**
- * @param {string} fileName
- */
-export function getFileInfo(fileName) {
+export function getFileInfo(fileName: string) {
   const absFileName = path.resolve(fileName);
   const absDir = path.dirname(path.resolve(fileName));
 
@@ -42,11 +39,7 @@ export function getFileInfo(fileName) {
   };
 }
 
-/**
- * @param {string[]} segments
- * @returns {string[]}
- */
-function getFirstPrivateModuleDirSegments(segments) {
+function getFirstPrivateModuleDirSegments(segments: string[]): string[] {
   const firstPrivateModuleDirSegments = [];
 
   for (const segment of segments) {
@@ -60,11 +53,7 @@ function getFirstPrivateModuleDirSegments(segments) {
   return [];
 }
 
-/**
- * @param {string[]} segments
- * @returns {boolean}
- */
-function checkHasNestedPrivateModuleDirSegments(segments) {
+function checkHasNestedPrivateModuleDirSegments(segments: string[]): boolean {
   let privateModuleDirSegmentsCount = 0;
 
   for (const segment of segments) {
