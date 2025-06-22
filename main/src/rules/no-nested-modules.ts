@@ -6,7 +6,7 @@ export const noNestedModulesRule: Rule.RuleModule = {
   meta: {
     type: "problem",
     docs: {
-      description: "No nested modules",
+      description: "Disallow nested module folders",
     },
     schema: [],
   },

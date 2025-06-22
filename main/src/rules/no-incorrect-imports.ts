@@ -4,11 +4,11 @@ import { getFileInfo } from "../internal/getFileInfo";
 import { PRIVATE_MODULE_DIR_SEGMENT } from "../internal/constants";
 import { Rule } from "eslint";
 
-export const correctImportsRule: Rule.RuleModule = {
+export const noIncorrectImportsRule: Rule.RuleModule = {
   meta: {
     type: "problem",
     docs: {
-      description: "Только корректный импорт папок-модулей",
+      description: "Allow only correct imports from module folders",
     },
     schema: [],
   },
