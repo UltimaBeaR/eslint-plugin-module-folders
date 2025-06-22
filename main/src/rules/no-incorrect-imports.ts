@@ -1,9 +1,14 @@
 import path from "node:path";
 import { resolveTsImport } from "../internal/resolveTsImport";
-import { getCodeFileInfo } from "../internal/codeFileInfo";
+import { CodeFileInfo, getCodeFileInfo } from "../internal/codeFileInfo";
 import { PRIVATE_MODULE_DIR_SEGMENT } from "../internal/constants";
 import { Rule } from "eslint";
-import { tryImportFromModuleFoldersConfig } from "../internal/projectConfigs/moduleFoldersConfig";
+import {
+  ModuleFoldersConfig,
+  tryImportFromModuleFoldersConfig,
+} from "../internal/projectConfigs/moduleFoldersConfig";
+import { type Node as EsTreeNode } from "estree";
+import { pathToSegments } from "../internal/utils";
 
 export const noIncorrectImportsRule: Rule.RuleModule = {
   meta: {
@@ -16,34 +21,49 @@ export const noIncorrectImportsRule: Rule.RuleModule = {
   create,
 };
 
+function handleImport(
+  context: Rule.RuleContext,
+  moduleFoldersConfig: ModuleFoldersConfig | null,
+  importNode: EsTreeNode,
+  importingExpression: unknown
+) {
+  // Если путь к файлу импорта резолвится не как строка то пропускаем.
+  // Не знаю что это за кейсы такие, но вроде как в обычном случае всегда тут строка
+  if (typeof importingExpression !== "string") {
+    return;
+  }
+
+  const validationInfo = startValidation(context, importingExpression);
+
+  if (validationInfo === null) {
+    return;
+  }
+
+  const { importingFileInfo, thisFileInfo } = validationInfo;
+
+  if (
+    !validateMainRules(context, importNode, importingFileInfo, thisFileInfo)
+  ) {
+    return;
+  }
+
+  if (moduleFoldersConfig !== null) {
+    validateUserRules(
+      context,
+      importNode,
+      importingFileInfo,
+      thisFileInfo,
+      moduleFoldersConfig
+    );
+  }
+}
+
 function create(context: Rule.RuleContext): Rule.NodeListener {
-  const importRes = tryImportFromModuleFoldersConfig();
-
-  const res = (importRes as any).data.checks[0]("one", "two");
-
-  console.log("tessssst", { res });
+  const moduleFoldersConfig = tryImportFromModuleFoldersConfig();
 
   return {
     ImportDeclaration(node) {
-      const importingExpression = node.source.value;
-
-      // Если путь к файлу импорта резолвится не как строка то пропускаем.
-      // Не знаю что это за кейсы такие, но вроде как в обычном случае всегда тут строка
-      if (typeof importingExpression !== "string") {
-        return;
-      }
-
-      const validated = validateMainRules(context, importingExpression);
-
-      if (!validated) {
-        context.report({
-          node,
-          message:
-            "Cannot import from someone else's private " +
-            PRIVATE_MODULE_DIR_SEGMENT +
-            " folder. Use public import path instead",
-        });
-      }
+      handleImport(context, moduleFoldersConfig, node, node.source.value);
     },
 
     ImportExpression(node) {
@@ -55,74 +75,24 @@ function create(context: Rule.RuleContext): Rule.NodeListener {
         return;
       }
 
-      const importingExpression = node.source.value;
-
-      // Если путь к файлу импорта резолвится не как строка то пропускаем.
-      // Не знаю что это за кейсы такие, но вроде как в обычном случае всегда тут строка
-      if (typeof importingExpression !== "string") {
-        return;
-      }
-
-      const validated = validateMainRules(context, importingExpression);
-
-      if (!validated) {
-        context.report({
-          node,
-          message:
-            "Cannot import from someone else's private " +
-            PRIVATE_MODULE_DIR_SEGMENT +
-            " folder. Use public import path instead",
-        });
-      }
+      handleImport(context, moduleFoldersConfig, node, node.source.value);
     },
 
     ExportAllDeclaration(node) {
-      const importingExpression = node.source.value;
-
-      // Если путь к файлу импорта резолвится не как строка то пропускаем.
-      // Не знаю что это за кейсы такие, но вроде как в обычном случае всегда тут строка
-      if (typeof importingExpression !== "string") {
-        return;
-      }
-
-      const validated = validateMainRules(context, importingExpression);
-
-      if (!validated) {
-        context.report({
-          node,
-          message:
-            "Cannot import from someone else's private " +
-            PRIVATE_MODULE_DIR_SEGMENT +
-            " folder. Use public import path instead",
-        });
-      }
+      handleImport(context, moduleFoldersConfig, node, node.source.value);
     },
 
     ExportNamedDeclaration(node) {
-      const importingExpression = node.source?.value;
-
-      // Если путь к файлу импорта резолвится не как строка то пропускаем.
-      // Не знаю что это за кейсы такие, но вроде как в обычном случае всегда тут строка
-      if (typeof importingExpression !== "string") {
+      if (node.source === null || node.source === undefined) {
         return;
       }
 
-      const validated = validateMainRules(context, importingExpression);
-
-      if (!validated) {
-        context.report({
-          node,
-          message:
-            "Cannot import from someone else's private " +
-            PRIVATE_MODULE_DIR_SEGMENT +
-            " folder. Use public import path instead",
-        });
-      }
+      handleImport(context, moduleFoldersConfig, node, node.source.value);
     },
   };
 }
 
-function validateMainRules(
+function startValidation(
   context: Rule.RuleContext,
   importingExpression: string
 ) {
@@ -136,7 +106,7 @@ function validateMainRules(
     // undefined будет если это не js/ts файл а файл ресурсов/стилей
     // такие файлы пропускаем
 
-    return true;
+    return null;
   }
 
   const importingFileInfo = getCodeFileInfo(importingFileName);
@@ -148,7 +118,7 @@ function validateMainRules(
   ) {
     // Если один из файлов с неправильно определенной структурой модулей - прекращаем обработку любых правил про модули
 
-    return true;
+    return null;
   }
 
   // TODO: вместо этого должен быть include/exclude конфиг
@@ -159,16 +129,20 @@ function validateMainRules(
   //
   // Пропускаем импорты из node_modules
   if (importingFileInfo.relDir.startsWith("node_modules" + path.sep)) {
-    return true;
+    return null;
   }
 
+  return { importingFileInfo, thisFileInfo };
+}
+
+function validateMainRules(
+  context: Rule.RuleContext,
+  node: EsTreeNode,
+  importingFileInfo: CodeFileInfo,
+  thisFileInfo: CodeFileInfo
+): boolean {
   const thisModuleFolder = thisFileInfo.moduleFolder;
   const importingModuleFolder = importingFileInfo.moduleFolder;
-
-  console.log("---", {
-    self: { name: thisFileInfo.absFileName, ...thisModuleFolder },
-    imp: { name: importingFileInfo.absFileName, ...importingModuleFolder },
-  });
 
   if (
     importingModuleFolder.type === "moduleFolder" &&
@@ -189,7 +163,48 @@ function validateMainRules(
     // Если дошли сюда значит это импорт из приватной части модуля из тех мест откуда
     // импорт запрещен
 
-    return false;
+    context.report({
+      node,
+      message:
+        "Cannot import from someone else's private " +
+        PRIVATE_MODULE_DIR_SEGMENT +
+        " folder. Use public import path instead",
+    });
+  }
+
+  return true;
+}
+
+function validateUserRules(
+  context: Rule.RuleContext,
+  node: EsTreeNode,
+  importingFileInfo: CodeFileInfo,
+  thisFileInfo: CodeFileInfo,
+  moduleFoldersConfig: ModuleFoldersConfig
+): boolean {
+  if (
+    importingFileInfo.moduleFolder.type === "notModuleFolder" ||
+    thisFileInfo.moduleFolder.type === "notModuleFolder" ||
+    importingFileInfo.moduleFolder.relModuleDir ===
+      thisFileInfo.moduleFolder.relModuleDir
+  ) {
+    return true;
+  }
+
+  for (const check of moduleFoldersConfig.checks ?? []) {
+    const checkRes = check(
+      pathToSegments(thisFileInfo.moduleFolder.relModuleDir),
+      pathToSegments(importingFileInfo.moduleFolder.relModuleDir)
+    );
+
+    if (typeof checkRes === "string") {
+      context.report({
+        node,
+        message: "Cannot import. " + checkRes,
+      });
+
+      return false;
+    }
   }
 
   return true;

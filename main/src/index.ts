@@ -31,3 +31,5 @@ module.exports = plugin;
 
 // Note: такой экспорт чтобы тайпинги правильно генерились (в рантайме используется commonjs экспорт)
 export default plugin;
+
+export type { ModuleFoldersConfig } from "./internal/projectConfigs/moduleFoldersConfig";

@@ -1,11 +1,17 @@
-module.exports = {
+/** @type {import('eslint-plugin-module-folders').ModuleFoldersConfig} */
+const config = {
   checks: [
-    /**
-     * @param {string} fromPath
-     * @param {string} toPath
-     */
-    (fromPath, toPath) => {
-      return "Нельзя так! " + fromPath + " - " + toPath + " !!";
+    (modulePath, importingModulePath) => {
+      const importingModule = importingModulePath.join("/");
+      const module = modulePath.join("/");
+
+      if (importingModule === "src/module1" && module === "src/module2") {
+        return "Нельзя из модуля2 импортить модуль1!";
+      }
+
+      return undefined;
     },
   ],
 };
+
+module.exports = config;
