@@ -1,5 +1,5 @@
 import path from "path";
-import { projectAbsRootDir } from "./paths";
+import { targetProjectAbsRootDir } from "./paths";
 import { PRIVATE_MODULE_DIR_SEGMENT } from "./constants";
 import { pathToSegments, segmentsToPath } from "./utils";
 
@@ -7,7 +7,7 @@ export function getFileInfo(fileName: string) {
   const absFileName = path.resolve(fileName);
   const absDir = path.dirname(path.resolve(fileName));
 
-  const relDir = path.relative(projectAbsRootDir, absDir);
+  const relDir = path.relative(targetProjectAbsRootDir, absDir);
 
   const relDirSegments = pathToSegments(relDir);
 

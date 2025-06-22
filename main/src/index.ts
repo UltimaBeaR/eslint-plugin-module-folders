@@ -1,13 +1,13 @@
 import { ESLint } from "eslint";
 
-import { parsedPackageJson } from "./internal/parsedPackageJson";
+import { parsedPluginPackageJson } from "./internal/projectConfigs/packageJson";
 import { noNestedModulesRule } from "./rules/no-nested-modules";
 import { noIncorrectImportsRule } from "./rules/no-incorrect-imports";
 
 const plugin = {
   meta: {
-    name: parsedPackageJson.name,
-    version: parsedPackageJson.version,
+    name: parsedPluginPackageJson.name,
+    version: parsedPluginPackageJson.version,
   },
 
   rules: {

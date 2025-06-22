@@ -1,7 +1,7 @@
 import fs from "fs";
-import { pluginProjectPackageJsonAbsDir } from "./paths.js";
+import { pluginProjectPackageJsonAbsDir } from "../paths.js";
 
-export const parsedPackageJson: PackageJson = JSON.parse(
+export const parsedPluginPackageJson: PackageJson = JSON.parse(
   fs.readFileSync(pluginProjectPackageJsonAbsDir, "utf8")
 );
 

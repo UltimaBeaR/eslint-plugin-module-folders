@@ -1,6 +1,6 @@
 import ts from "typescript";
 import path from "node:path";
-import { projectAbsRootDir } from "./paths.js";
+import { targetProjectAbsRootDir } from "../paths.js";
 
 function parseTsConfig(tsconfigPath: string) {
   const configFile = ts.readConfigFile(tsconfigPath, ts.sys.readFile);
@@ -14,11 +14,11 @@ function parseTsConfig(tsconfigPath: string) {
 // TODO: сделать нормальный поиск tsconfig / jsconfig, пока тут хардкод - просто в корне проекта tsconfig
 // Либо сделать такой хардкод и возможность через настройки плагина задавать путь к этому конфигу
 
-const tsconfigPath = path.resolve(
-  path.join(projectAbsRootDir, "tsconfig.json")
+const targetTsConfigPath = path.resolve(
+  path.join(targetProjectAbsRootDir, "tsconfig.json")
 );
-if (!tsconfigPath) {
+if (!targetTsConfigPath) {
   throw new Error("tsconfig.json not found");
 }
 
-export const parsedTsConfig = parseTsConfig(tsconfigPath);
+export const parsedTargetTsConfig = parseTsConfig(targetTsConfigPath);

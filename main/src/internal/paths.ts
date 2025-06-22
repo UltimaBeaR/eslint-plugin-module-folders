@@ -13,7 +13,7 @@ export const pluginProjectPackageJsonAbsDir = path.join(
 // -------------------- пути проекта, в котором запускаются правил
 
 /** Путь к проекту, в котором запускается плагин (на котором отрабатывают правила плагина) */
-export const projectAbsRootDir = path.resolve(process.cwd());
+export const targetProjectAbsRootDir = path.resolve(process.cwd());
 
 // console.log("module-folders paths info", {
 //   pluginProjectRootAbsDir,

@@ -1,7 +1,7 @@
 import ts from "typescript";
-import { parsedTsConfig } from "./tsConfig.js";
+import { parsedTargetTsConfig } from "./projectConfigs/tsConfig";
 
-const compilerHost = ts.createCompilerHost(parsedTsConfig.options, true);
+const compilerHost = ts.createCompilerHost(parsedTargetTsConfig.options, true);
 
 /**
  * Возвращает путь к ts файлу (также может быть tsx, js, jsx)
@@ -13,7 +13,7 @@ export function resolveTsImport(importSource: string, importerFile: string) {
   const { resolvedModule } = ts.resolveModuleName(
     importSource,
     importerFile,
-    parsedTsConfig.options,
+    parsedTargetTsConfig.options,
     compilerHost
   );
   return resolvedModule?.resolvedFileName;

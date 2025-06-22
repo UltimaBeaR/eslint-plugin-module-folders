@@ -1,0 +1,11 @@
+module.exports = {
+  checks: [
+    /**
+     * @param {string} fromPath
+     * @param {string} toPath
+     */
+    (fromPath, toPath) => {
+      return "Нельзя так! " + fromPath + " - " + toPath + " !!";
+    },
+  ],
+};

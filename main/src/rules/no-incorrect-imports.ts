@@ -3,6 +3,7 @@ import { resolveTsImport } from "../internal/resolveTsImport";
 import { getFileInfo } from "../internal/getFileInfo";
 import { PRIVATE_MODULE_DIR_SEGMENT } from "../internal/constants";
 import { Rule } from "eslint";
+import { tryImportFromModuleFoldersConfig } from "../internal/projectConfigs/moduleFoldersConfig";
 
 export const noIncorrectImportsRule: Rule.RuleModule = {
   meta: {
@@ -16,6 +17,12 @@ export const noIncorrectImportsRule: Rule.RuleModule = {
 };
 
 function create(context: Rule.RuleContext): Rule.NodeListener {
+  const importRes = tryImportFromModuleFoldersConfig();
+
+  const res = (importRes as any).data.checks[0]("one", "two");
+
+  console.log("tessssst", { res });
+
   return {
     ImportDeclaration(node) {
       const importingExpression = node.source.value;
