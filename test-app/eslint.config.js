@@ -26,8 +26,7 @@ export default tseslint.config(
       //   "warn",
       //   { allowConstantExport: true },
       // ],
-      "module-folders/no-nested-modules": "error",
-      "module-folders/correct-imports": "error",
+      ...moduleFolders.configs.recommended.rules,
     },
   }
 );

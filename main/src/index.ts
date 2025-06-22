@@ -4,7 +4,7 @@ import { parsedPackageJson } from "./internal/parsedPackageJson";
 import { noNestedModulesRule } from "./rules/no-nested-modules";
 import { noIncorrectImportsRule } from "./rules/no-incorrect-imports";
 
-const plugin: ESLint.Plugin = {
+const plugin = {
   meta: {
     name: parsedPackageJson.name,
     version: parsedPackageJson.version,
@@ -14,6 +14,20 @@ const plugin: ESLint.Plugin = {
     "no-nested-modules": noNestedModulesRule,
     "no-incorrect-imports": noIncorrectImportsRule,
   },
-};
 
-module.exports = { ...plugin };
+  configs: {
+    recommended: {
+      plugins: ["module-folders"],
+      rules: {
+        "module-folders/no-nested-modules": "error",
+        "module-folders/no-incorrect-imports": "error",
+      },
+    },
+  },
+} satisfies ESLint.Plugin;
+
+// Note: такой экспорт чтобы в commonjs в рантайме работало, иначе не хочет
+module.exports = plugin;
+
+// Note: такой экспорт чтобы тайпинги правильно генерились (в рантайме используется commonjs экспорт)
+export default plugin;

@@ -7,7 +7,7 @@
     "strict": true,
     "esModuleInterop": true,
     "moduleResolution": "node10",
-    "declaration": false,
+    "declaration": true,
     "skipLibCheck": true
   },
   "include": ["src"],
