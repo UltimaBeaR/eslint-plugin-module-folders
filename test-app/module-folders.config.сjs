@@ -1,16 +1,66 @@
+/**
+ * Проверяет что правила импорта по слоям, что только верхние слои могут импортировать нижние, но не наоборот
+ *
+ * @param {string} modulePath
+ * @param {string} importingModulePath
+ * @param {{name: string, path: string, slices: boolean}[]} orderedLayers Список начальных частей путей к папкам-слоям относительно корня проекта.
+ * Первый элемент - верхний слой, последний - нижний слой.
+ * @returns {string | null | undefined}
+ */
+function checkFsdRules(modulePath, importingModulePath, orderedLayers) {
+  const moduleLayerIdx = orderedLayers.findIndex(
+    (layer) =>
+      modulePath === layer.path || modulePath.startsWith(layer.path + "/")
+  );
+
+  const importingModuleLayerIdx = orderedLayers.findIndex(
+    (layer) =>
+      importingModulePath === layer.path ||
+      importingModulePath.startsWith(layer.path + "/")
+  );
+
+  if (moduleLayerIdx === -1 || importingModuleLayerIdx === -1) {
+    // Если импортируем из или в неизвестную папку - то такие импорты разрешены.
+    return null;
+  }
+
+  const importingModuleLayer = orderedLayers[importingModuleLayerIdx];
+  const moduleLayer = orderedLayers[moduleLayerIdx];
+
+  if (moduleLayerIdx > importingModuleLayerIdx) {
+    return `Нарушение правила FSD по импортам между слоями. Нельзя импортировать слой ${importingModuleLayer.name} из слоя ${moduleLayer.name}`;
+  }
+
+  if (
+    moduleLayer.slices &&
+    moduleLayerIdx === importingModuleLayerIdx &&
+    modulePath !== importingModulePath
+  ) {
+    return `Нарушение правила FSD по импортам между слайсами одного и того же слоя ${moduleLayer.name}`;
+  }
+
+  return null;
+}
+
+const orderedFsdLayers = [
+  { name: "App", path: "src/app", slices: false },
+  { name: "Pages", path: "src/pages", slices: true },
+  { name: "Widgets", path: "src/widgets", slices: true },
+  { name: "Features", path: "src/features", slices: true },
+  { name: "Entities", path: "src/entities", slices: false },
+  { name: "EntitiesBase", path: "src/entitiesBase", slices: false },
+  { name: "Shared", path: "src/shared", slices: false },
+];
+
 /** @type {import('eslint-plugin-module-folders').ModuleFoldersConfig} */
 const config = {
   checks: [
-    (modulePath, importingModulePath) => {
-      const importingModule = importingModulePath.join("/");
-      const module = modulePath.join("/");
-
-      if (importingModule === "src/module1" && module === "src/module2") {
-        return "Нельзя из модуля2 импортить модуль1!";
-      }
-
-      return undefined;
-    },
+    (modulePath, importingModulePath) =>
+      checkFsdRules(
+        modulePath.join("/"),
+        importingModulePath.join("/"),
+        orderedFsdLayers
+      ),
   ],
 };
 

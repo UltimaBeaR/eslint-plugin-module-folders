@@ -21,6 +21,40 @@ export const noIncorrectImportsRule: Rule.RuleModule = {
   create,
 };
 
+function create(context: Rule.RuleContext): Rule.NodeListener {
+  const moduleFoldersConfig = tryImportFromModuleFoldersConfig();
+
+  return {
+    ImportDeclaration(node) {
+      handleImport(context, moduleFoldersConfig, node, node.source.value);
+    },
+
+    ImportExpression(node) {
+      if (node.source.type !== "Literal") {
+        // Если в динамическом импорте не используется литерал как путь импорта -
+        // такое линтер будет тут пропускать, т.к. неизвестно что там за путь может
+        // в рантайме получиться. Проверки будут делаться только на константно заданные пути (литералы)
+
+        return;
+      }
+
+      handleImport(context, moduleFoldersConfig, node, node.source.value);
+    },
+
+    ExportAllDeclaration(node) {
+      handleImport(context, moduleFoldersConfig, node, node.source.value);
+    },
+
+    ExportNamedDeclaration(node) {
+      if (node.source === null || node.source === undefined) {
+        return;
+      }
+
+      handleImport(context, moduleFoldersConfig, node, node.source.value);
+    },
+  };
+}
+
 function handleImport(
   context: Rule.RuleContext,
   moduleFoldersConfig: ModuleFoldersConfig | null,
@@ -56,40 +90,6 @@ function handleImport(
       moduleFoldersConfig
     );
   }
-}
-
-function create(context: Rule.RuleContext): Rule.NodeListener {
-  const moduleFoldersConfig = tryImportFromModuleFoldersConfig();
-
-  return {
-    ImportDeclaration(node) {
-      handleImport(context, moduleFoldersConfig, node, node.source.value);
-    },
-
-    ImportExpression(node) {
-      if (node.source.type !== "Literal") {
-        // Если в динамическом импорте не используется литерал как путь импорта -
-        // такое линтер будет тут пропускать, т.к. неизвестно что там за путь может
-        // в рантайме получиться. Проверки будут делаться только на константно заданные пути (литералы)
-
-        return;
-      }
-
-      handleImport(context, moduleFoldersConfig, node, node.source.value);
-    },
-
-    ExportAllDeclaration(node) {
-      handleImport(context, moduleFoldersConfig, node, node.source.value);
-    },
-
-    ExportNamedDeclaration(node) {
-      if (node.source === null || node.source === undefined) {
-        return;
-      }
-
-      handleImport(context, moduleFoldersConfig, node, node.source.value);
-    },
-  };
 }
 
 function startValidation(
@@ -165,10 +165,7 @@ function validateMainRules(
 
     context.report({
       node,
-      message:
-        "Cannot import from someone else's private " +
-        PRIVATE_MODULE_DIR_SEGMENT +
-        " folder. Use public import path instead",
+      message: `Importing from another package’s private ${PRIVATE_MODULE_DIR_SEGMENT} directory is not allowed. Use the public import path instead.`,
     });
   }
 
