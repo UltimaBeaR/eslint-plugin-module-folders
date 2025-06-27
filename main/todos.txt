@@ -1,3 +1,11 @@
+https://github.com/import-js/eslint-plugin-import
+и юзать из него https://www.npmjs.com/package/eslint-module-utils
+для резолвинга файлов. Не юзать тайпскрипт напрямую.
+На эту тему переписка в нейронке. также там последние 2 вопроса это на тему
+include/exclude как раз.
+
+
+
 Поидее мне надо брать tsconfig/jsconfig
 и брать ихние include/exclude и переисопльзовать их
 Если же заданы явные в плагине то юзать их.
