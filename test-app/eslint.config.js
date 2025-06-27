@@ -5,6 +5,8 @@ import reactRefresh from "eslint-plugin-react-refresh";
 import tseslint from "typescript-eslint";
 import moduleFolders from "eslint-plugin-module-folders";
 import { createTypeScriptImportResolver } from "eslint-import-resolver-typescript";
+import moduleFoldersPlugin from "eslint-plugin-module-folders";
+import importPlugin from "eslint-plugin-import";
 
 export default tseslint.config(
   { ignores: ["dist"] },
@@ -18,7 +20,8 @@ export default tseslint.config(
     plugins: {
       "react-hooks": reactHooks,
       // "react-refresh": reactRefresh,
-      "module-folders": moduleFolders,
+      "module-folders": moduleFoldersPlugin,
+      import: importPlugin,
     },
     rules: {
       ...reactHooks.configs.recommended.rules,
@@ -27,6 +30,9 @@ export default tseslint.config(
       //   { allowConstantExport: true },
       // ],
       ...moduleFolders.configs.recommended.rules,
+    },
+    settings: {
+      ...moduleFolders.configs.recommended.settings,
     },
   }
 );

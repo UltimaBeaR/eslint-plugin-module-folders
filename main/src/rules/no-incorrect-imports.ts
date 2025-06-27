@@ -1,5 +1,4 @@
 import path from "node:path";
-import { resolveTsImport } from "../internal/resolveTsImport";
 import { CodeFileInfo, getCodeFileInfo } from "../internal/codeFileInfo";
 import { PRIVATE_MODULE_DIR_SEGMENT } from "../internal/constants";
 import { Rule } from "eslint";
@@ -9,6 +8,7 @@ import {
 } from "../internal/projectConfigs/moduleFoldersConfig";
 import { type Node as EsTreeNode } from "estree";
 import { pathToSegments } from "../internal/utils";
+import eslintModuleUtilsResolve from "eslint-module-utils/resolve";
 
 export const noIncorrectImportsRule: Rule.RuleModule = {
   meta: {
@@ -96,15 +96,18 @@ function startValidation(
   context: Rule.RuleContext,
   importingExpression: string
 ) {
-  // TODO: сделать поддержку импортов не только тайпскрипта
-  const importingFileName = resolveTsImport(
+  const importingFileName = eslintModuleUtilsResolve(
     importingExpression,
-    context.filename
+    context
   );
 
-  if (importingFileName === undefined) {
+  if (importingFileName === undefined || importingFileName === null) {
     // undefined будет если это не js/ts файл а файл ресурсов/стилей
     // такие файлы пропускаем
+
+    console.warn(
+      `Cannot resolve import from "${importingExpression}". File "${context.filename}"`
+    );
 
     return null;
   }

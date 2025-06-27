@@ -1,3 +1,12 @@
+Не забыть написать в ридми что надо ставить для того чтобы плагин работал
+Кроме моего плагина тут нужен еще eslint-plugin-import и видимо еще
+eslint-import-resolver-typescript а также надо в конфиге там настроить определенным
+образом (я пока написал это в recommended конфиге, но это трудно как-то юзать)
+
+
+
+
+
 https://github.com/import-js/eslint-plugin-import
 и юзать из него https://www.npmjs.com/package/eslint-module-utils
 для резолвинга файлов. Не юзать тайпскрипт напрямую.
