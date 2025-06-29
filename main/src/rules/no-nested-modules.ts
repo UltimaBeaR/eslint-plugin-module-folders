@@ -1,6 +1,7 @@
 import { Rule } from "eslint";
 import { PRIVATE_MODULE_DIR_SEGMENT } from "../internal/constants";
 import { getCodeFileInfo } from "../internal/codeFileInfo";
+import { initFileSystemCache } from "../internal/fileSystemCache";
 
 export const noNestedModulesRule: Rule.RuleModule = {
   meta: {
@@ -14,6 +15,12 @@ export const noNestedModulesRule: Rule.RuleModule = {
 };
 
 function create(context: Rule.RuleContext): Rule.NodeListener {
+  // Инициализация файлового кэша при запуске плагина
+  // Проходится по всем файлам в проекте (куда присоединен плагин)
+  // и кэширует по ним некоторые данные, плюс вешает слежение за изменением
+  // файлов в проекте, чтобы перестраивать кэш при изменениях
+  initFileSystemCache(context);
+
   return {
     Program(node) {
       const thisFileInfo = getCodeFileInfo(context.filename);

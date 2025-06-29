@@ -1,4 +1,5 @@
 import path from "path";
+import fs from "fs";
 import { targetProjectAbsRootDir } from "./paths";
 import { PRIVATE_MODULE_DIR_SEGMENT } from "./constants";
 import { pathToSegments, segmentsToPath } from "./utils";
@@ -169,7 +170,43 @@ function checkFsIsPrivateModuleFolderExists(relModuleDir: string) {
   // что она существует и в ней есть хотя бы один любой файл. Если да то считается что приватная папка модуля существует
   // Такая же логика идет в кэшированной файловой системе
 
-  return fileSystemCache.privatePartModuleFiles.has(relModuleDir);
+  // if (fileSystemCache.initialized) {
+  //   return fileSystemCache.privatePartModuleFiles.has(relModuleDir);
+  // } else {
+
+  return true;
+
+  // const res = hasFilesInDir(
+  //   path.join(targetProjectAbsRootDir, relModuleDir, PRIVATE_MODULE_DIR_SEGMENT)
+  // );
+
+  // console.log(relModuleDir, res);
+
+  // return res;
+
+  //}
+}
+
+function hasFilesInDir(dir: string) {
+  if (!fs.existsSync(dir)) {
+    return false;
+  }
+
+  const entries = fs.readdirSync(dir, { withFileTypes: true });
+
+  for (const entry of entries) {
+    if (entry.isFile()) {
+      return true;
+    }
+
+    if (entry.isDirectory()) {
+      if (hasFilesInDir(path.join(dir, entry.name))) {
+        return true;
+      }
+    }
+  }
+
+  return false;
 }
 
 function getFirstPrivateModuleDirSegments(segments: string[]): string[] {

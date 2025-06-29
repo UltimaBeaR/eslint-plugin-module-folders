@@ -2,6 +2,8 @@ import chokidar from "chokidar";
 import path from "path";
 import { targetProjectAbsRootDir } from "./paths";
 import { getFileInfoLight } from "./codeFileInfo";
+import { Rule } from "eslint";
+import { canProcessFileNameOrDir, getPathsSettings } from "./pathsSettings";
 
 function logModuleTreeCache() {
   console.log();
@@ -68,20 +70,28 @@ export type FileSystemCache = {
    * Тут НЕ будут храниться ошибочные модули (с 2мя приватными вложенными папками)
    */
   privatePartModuleFiles: Map<string, Set<string>>;
+
+  initialized: boolean;
 };
 
 export const fileSystemCache: FileSystemCache = {
   privatePartModuleFiles: new Map(),
+
+  initialized: false,
 };
 
 let initialized = false;
 
-export function initFileSystemCache() {
+export function initFileSystemCache(context: Rule.RuleContext) {
   if (initialized) {
     return;
   }
 
   initialized = true;
+
+  console.log("START");
+
+  const pathsSettings = getPathsSettings(context);
 
   //console.log("init module tree " + targetProjectAbsRootDir);
 
@@ -91,22 +101,7 @@ export function initFileSystemCache() {
     usePolling: false,
 
     ignored: (fileNameOrDir, stats) => {
-      // TODO: вместо этого должен быть include/exclude конфиг
-      // по дефолту будет exclude: "/node_modules/**" или типа того
-      // и тут как раз будет проверяться - нужно ли процессить файл
-      // (или даже раньше, в самом начале, до получения инфы о файле вообще.
-      // Но делать это надо по относительному от корня проекту пути)
-      //
-      // Пропускаем node_modules
-      if (
-        fileNameOrDir.startsWith(
-          path.join(targetProjectAbsRootDir, "node_modules") + path.sep
-        )
-      ) {
-        return true;
-      }
-
-      return false;
+      return !canProcessFileNameOrDir(pathsSettings, fileNameOrDir);
     },
   });
 
@@ -121,6 +116,7 @@ export function initFileSystemCache() {
     });
 
   watcher.on("ready", () => {
+    fileSystemCache.initialized = true;
     //console.log("initial file scan complete");
     //logModuleTreeCache();
     // TODO: если работаем в режиме ci/cd то наверное можно тут отключить вотчер на этом моменте, т.к

@@ -9,6 +9,11 @@ import {
 import { type Node as EsTreeNode } from "estree";
 import { pathToSegments } from "../internal/utils";
 import eslintModuleUtilsResolve from "eslint-module-utils/resolve";
+import { initFileSystemCache } from "../internal/fileSystemCache";
+import {
+  canProcessFileNameOrDir,
+  getPathsSettings,
+} from "../internal/pathsSettings";
 
 export const noIncorrectImportsRule: Rule.RuleModule = {
   meta: {
@@ -22,6 +27,12 @@ export const noIncorrectImportsRule: Rule.RuleModule = {
 };
 
 function create(context: Rule.RuleContext): Rule.NodeListener {
+  // Инициализация файлового кэша при запуске плагина
+  // Проходится по всем файлам в проекте (куда присоединен плагин)
+  // и кэширует по ним некоторые данные, плюс вешает слежение за изменением
+  // файлов в проекте, чтобы перестраивать кэш при изменениях
+  initFileSystemCache(context);
+
   const moduleFoldersConfig = tryImportFromModuleFoldersConfig();
 
   return {
@@ -124,14 +135,9 @@ function startValidation(
     return null;
   }
 
-  // TODO: вместо этого должен быть include/exclude конфиг
-  // по дефолту будет exclude: "/node_modules/**" или типа того
-  // и тут как раз будет проверяться - нужно ли процессить файл
-  // (или даже раньше, в самом начале, до получения инфы о файле вообще.
-  // Но делать это надо по относительному от корня проекту пути)
-  //
-  // Пропускаем импорты из node_modules
-  if (importingFileInfo.relDir.startsWith("node_modules" + path.sep)) {
+  const pathsSettings = getPathsSettings(context);
+
+  if (!canProcessFileNameOrDir(pathsSettings, importingFileInfo.relDir)) {
     return null;
   }
 
