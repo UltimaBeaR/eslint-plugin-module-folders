@@ -24,7 +24,6 @@ const plugin = {
 
   configs: {
     recommended: {
-      plugins: ["module-folders", "import"],
       rules: {
         "module-folders/no-nested-modules": "error",
         "module-folders/no-incorrect-imports": "error",

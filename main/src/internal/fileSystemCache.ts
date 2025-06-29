@@ -83,7 +83,7 @@ export function initFileSystemCache() {
 
   initialized = true;
 
-  console.log("init module tree " + targetProjectAbsRootDir);
+  //console.log("init module tree " + targetProjectAbsRootDir);
 
   // TODO: нужно сделать режим ci/cd в котором не будет запускаться вотчер но будет запускаться
   // на первый запуск полный анализ дерева, но только один раз.
@@ -121,10 +121,8 @@ export function initFileSystemCache() {
     });
 
   watcher.on("ready", () => {
-    console.log("initial file scan complete");
-
+    //console.log("initial file scan complete");
     //logModuleTreeCache();
-
     // TODO: если работаем в режиме ci/cd то наверное можно тут отключить вотчер на этом моменте, т.к
     // он тут был нужен только для изначального заполнения кэша.
   });
