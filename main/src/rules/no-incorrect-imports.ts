@@ -1,4 +1,7 @@
-import { CodeFileInfo, getCodeFileInfo } from "../internal/fileInfo/fileInfo";
+import {
+  ModuleFileInfo,
+  getModuleFileInfo,
+} from "../internal/moduleFileInfo/moduleFileInfo";
 import { PRIVATE_MODULE_DIR_SEGMENT } from "../internal/constants";
 import { Rule } from "eslint";
 import {
@@ -122,8 +125,8 @@ function startValidation(
     return null;
   }
 
-  const importingFileInfo = getCodeFileInfo(importingFileName);
-  const thisFileInfo = getCodeFileInfo(context.filename);
+  const importingFileInfo = getModuleFileInfo(importingFileName);
+  const thisFileInfo = getModuleFileInfo(context.filename);
 
   if (
     thisFileInfo.error !== undefined ||
@@ -146,8 +149,8 @@ function startValidation(
 function validateMainRules(
   context: Rule.RuleContext,
   node: EsTreeNode,
-  importingFileInfo: CodeFileInfo,
-  thisFileInfo: CodeFileInfo
+  importingFileInfo: ModuleFileInfo,
+  thisFileInfo: ModuleFileInfo
 ): boolean {
   const thisModuleFolder = thisFileInfo.moduleFolder;
   const importingModuleFolder = importingFileInfo.moduleFolder;
@@ -183,8 +186,8 @@ function validateMainRules(
 function validateUserRules(
   context: Rule.RuleContext,
   node: EsTreeNode,
-  importingFileInfo: CodeFileInfo,
-  thisFileInfo: CodeFileInfo,
+  importingFileInfo: ModuleFileInfo,
+  thisFileInfo: ModuleFileInfo,
   moduleFoldersConfig: ModuleFoldersConfig
 ): boolean {
   if (

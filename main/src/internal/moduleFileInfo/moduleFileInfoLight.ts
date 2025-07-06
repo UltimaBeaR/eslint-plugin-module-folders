@@ -7,7 +7,7 @@ import {
   getFirstPrivateModuleDirSegments,
 } from "./common";
 
-export type FileInfoLight = {
+export type ModuleFileInfoLight = {
   absFileName: string;
 
   relDirSegments: string[];
@@ -25,7 +25,7 @@ export type FileInfoLight = {
 };
 
 /** Получает всю возможную информацию по файлу из его имени, без попыток доступа в файловую систему */
-export function getFileInfoLight(fileName: string): FileInfoLight {
+export function getModuleFileInfoLight(fileName: string): ModuleFileInfoLight {
   const absFileName = path.resolve(fileName);
   const absDir = path.dirname(path.resolve(fileName));
 
@@ -36,12 +36,12 @@ export function getFileInfoLight(fileName: string): FileInfoLight {
   const hasNestedPrivateModuleDirSegments =
     checkHasNestedPrivateModuleDirSegments(relDirSegments);
 
-  const moduleFolder: FileInfoLight["moduleFolder"] =
+  const moduleFolder: ModuleFileInfoLight["moduleFolder"] =
     hasNestedPrivateModuleDirSegments
       ? { type: "notModuleFolder" }
       : getModuleFolderLight(relDirSegments);
 
-  const result: FileInfoLight = {
+  const result: ModuleFileInfoLight = {
     absFileName,
 
     relDirSegments,
@@ -59,7 +59,7 @@ export function getFileInfoLight(fileName: string): FileInfoLight {
 
 function getModuleFolderLight(
   relDirSegments: string[]
-): FileInfoLight["moduleFolder"] {
+): ModuleFileInfoLight["moduleFolder"] {
   const firstPrivateModuleDirSegments =
     getFirstPrivateModuleDirSegments(relDirSegments);
   const firstPrivateModuleRelDir = segmentsToPath(

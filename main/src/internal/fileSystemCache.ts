@@ -1,6 +1,6 @@
 import chokidar from "chokidar";
 import { targetProjectAbsRootDir } from "./paths";
-import { getFileInfoLight } from "./fileInfo/fileInfoLight";
+import { getModuleFileInfoLight } from "./moduleFileInfo/moduleFileInfoLight";
 import { Rule } from "eslint";
 import { canProcessFileNameOrDir, getPathsSettings } from "./pathsSettings";
 
@@ -21,7 +21,7 @@ function logModuleTreeCache() {
 }
 
 function updateCache(absFileName: string, operation: "add" | "remove") {
-  const fileInfoLight = getFileInfoLight(absFileName);
+  const fileInfoLight = getModuleFileInfoLight(absFileName);
 
   let relModuleDir: string | undefined;
 

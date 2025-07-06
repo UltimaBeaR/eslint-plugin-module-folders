@@ -1,6 +1,6 @@
 import { Rule } from "eslint";
 import { PRIVATE_MODULE_DIR_SEGMENT } from "../internal/constants";
-import { getCodeFileInfo } from "../internal/fileInfo/fileInfo";
+import { getModuleFileInfo } from "../internal/moduleFileInfo/moduleFileInfo";
 import { initFileSystemCache } from "../internal/fileSystemCache";
 
 export const noNestedModulesRule: Rule.RuleModule = {
@@ -23,7 +23,7 @@ function create(context: Rule.RuleContext): Rule.NodeListener {
 
   return {
     Program(node) {
-      const thisFileInfo = getCodeFileInfo(context.filename);
+      const thisFileInfo = getModuleFileInfo(context.filename);
 
       if (thisFileInfo.error === "hasNestedPrivateModuleDirSegments") {
         context.report({

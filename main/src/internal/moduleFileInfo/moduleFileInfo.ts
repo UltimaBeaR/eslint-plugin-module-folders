@@ -9,7 +9,7 @@ import {
 import { fileSystemCache } from "../fileSystemCache";
 import { PRIVATE_MODULE_DIR_SEGMENT } from "../constants";
 
-export type CodeFileInfo = {
+export type ModuleFileInfo = {
   absFileName: string;
 
   relDirSegments: string[];
@@ -26,9 +26,9 @@ export type CodeFileInfo = {
     | { type: "notModuleFolder" };
 };
 
-export function getCodeFileInfo(codeFileName: string): CodeFileInfo {
-  const absFileName = path.resolve(codeFileName);
-  const absDir = path.dirname(path.resolve(codeFileName));
+export function getModuleFileInfo(fileName: string): ModuleFileInfo {
+  const absFileName = path.resolve(fileName);
+  const absDir = path.dirname(path.resolve(fileName));
 
   const relDir = path.relative(targetProjectAbsRootDir, absDir);
 
@@ -37,12 +37,12 @@ export function getCodeFileInfo(codeFileName: string): CodeFileInfo {
   const hasNestedPrivateModuleDirSegments =
     checkHasNestedPrivateModuleDirSegments(relDirSegments);
 
-  const moduleFolder: CodeFileInfo["moduleFolder"] =
+  const moduleFolder: ModuleFileInfo["moduleFolder"] =
     hasNestedPrivateModuleDirSegments
       ? { type: "notModuleFolder" }
       : getModuleFolder(relDirSegments);
 
-  const result: CodeFileInfo = {
+  const result: ModuleFileInfo = {
     absFileName,
 
     relDirSegments,
@@ -60,7 +60,7 @@ export function getCodeFileInfo(codeFileName: string): CodeFileInfo {
 
 function getModuleFolder(
   relDirSegments: string[]
-): CodeFileInfo["moduleFolder"] {
+): ModuleFileInfo["moduleFolder"] {
   const firstPrivateModuleDirSegments =
     getFirstPrivateModuleDirSegments(relDirSegments);
   const firstPrivateModuleRelDir = segmentsToPath(
