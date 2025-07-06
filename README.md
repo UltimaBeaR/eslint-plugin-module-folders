@@ -62,13 +62,7 @@ const config = {
       // return null;
 
       // if import is incorrect
-      return (
-        'Can''t import from "' +
-        importingModulePath +
-        '" module folder to "' +
-        modulePath +
-        '" module folder'
-      );
+      return `Can't import from "${importingModulePath}" module folder to "${modulePath}" module folder`;
     },
   ],
 };

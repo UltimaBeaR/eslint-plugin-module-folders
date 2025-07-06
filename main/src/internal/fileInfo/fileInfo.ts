@@ -1,27 +1,13 @@
-import path from "path";
 import fs from "fs";
-import { targetProjectAbsRootDir } from "./paths";
-import { PRIVATE_MODULE_DIR_SEGMENT } from "./constants";
-import { pathToSegments, segmentsToPath } from "./utils";
-import { fileSystemCache } from "./fileSystemCache";
-
-export type FileInfoLight = {
-  absFileName: string;
-
-  relDirSegments: string[];
-  relDir: string;
-
-  error: "hasNestedPrivateModuleDirSegments" | undefined;
-
-  moduleFolder:
-    | {
-        type: "moduleFolder";
-        relModuleDir: string;
-        isInPrivatePart: boolean;
-      }
-    | { type: "notModuleFolder" }
-    | { type: "unknown" };
-};
+import path from "path";
+import { targetProjectAbsRootDir } from "../paths";
+import { pathToSegments, segmentsToPath } from "../utils";
+import {
+  checkHasNestedPrivateModuleDirSegments,
+  getFirstPrivateModuleDirSegments,
+} from "./common";
+import { fileSystemCache } from "../fileSystemCache";
+import { PRIVATE_MODULE_DIR_SEGMENT } from "../constants";
 
 export type CodeFileInfo = {
   absFileName: string;
@@ -39,58 +25,6 @@ export type CodeFileInfo = {
       }
     | { type: "notModuleFolder" };
 };
-
-export function getFileInfoLight(fileName: string): FileInfoLight {
-  const absFileName = path.resolve(fileName);
-  const absDir = path.dirname(path.resolve(fileName));
-
-  const relDir = path.relative(targetProjectAbsRootDir, absDir);
-
-  const relDirSegments = pathToSegments(relDir);
-
-  const hasNestedPrivateModuleDirSegments =
-    checkHasNestedPrivateModuleDirSegments(relDirSegments);
-
-  const moduleFolder: FileInfoLight["moduleFolder"] =
-    hasNestedPrivateModuleDirSegments
-      ? { type: "notModuleFolder" }
-      : getModuleFolderLight(relDirSegments);
-
-  const result: FileInfoLight = {
-    absFileName,
-
-    relDirSegments,
-    relDir,
-
-    error: hasNestedPrivateModuleDirSegments
-      ? "hasNestedPrivateModuleDirSegments"
-      : undefined,
-
-    moduleFolder,
-  };
-
-  return result;
-}
-
-function getModuleFolderLight(
-  relDirSegments: string[]
-): FileInfoLight["moduleFolder"] {
-  const firstPrivateModuleDirSegments =
-    getFirstPrivateModuleDirSegments(relDirSegments);
-  const firstPrivateModuleRelDir = segmentsToPath(
-    firstPrivateModuleDirSegments
-  );
-
-  if (firstPrivateModuleRelDir !== "") {
-    return {
-      type: "moduleFolder",
-      isInPrivatePart: true,
-      relModuleDir: path.dirname(firstPrivateModuleRelDir),
-    };
-  }
-
-  return { type: "unknown" };
-}
 
 export function getCodeFileInfo(codeFileName: string): CodeFileInfo {
   const absFileName = path.resolve(codeFileName);
@@ -170,24 +104,24 @@ function checkFsIsPrivateModuleFolderExists(relModuleDir: string) {
   // что она существует и в ней есть хотя бы один любой файл. Если да то считается что приватная папка модуля существует
   // Такая же логика идет в кэшированной файловой системе
 
-  // if (fileSystemCache.initialized) {
-  //   return fileSystemCache.privatePartModuleFiles.has(relModuleDir);
-  // } else {
+  if (fileSystemCache.initialized) {
+    return fileSystemCache.privatePartModuleFiles.has(relModuleDir);
+  } else {
+    const res = hasFilesInDir(
+      path.join(
+        targetProjectAbsRootDir,
+        relModuleDir,
+        PRIVATE_MODULE_DIR_SEGMENT
+      )
+    );
 
-  return true;
+    console.log(relModuleDir, res);
 
-  // const res = hasFilesInDir(
-  //   path.join(targetProjectAbsRootDir, relModuleDir, PRIVATE_MODULE_DIR_SEGMENT)
-  // );
-
-  // console.log(relModuleDir, res);
-
-  // return res;
-
-  //}
+    return res;
+  }
 }
 
-function hasFilesInDir(dir: string) {
+export function hasFilesInDir(dir: string) {
   if (!fs.existsSync(dir)) {
     return false;
   }
@@ -207,30 +141,4 @@ function hasFilesInDir(dir: string) {
   }
 
   return false;
-}
-
-function getFirstPrivateModuleDirSegments(segments: string[]): string[] {
-  const firstPrivateModuleDirSegments = [];
-
-  for (const segment of segments) {
-    firstPrivateModuleDirSegments.push(segment);
-
-    if (segment === PRIVATE_MODULE_DIR_SEGMENT) {
-      return firstPrivateModuleDirSegments;
-    }
-  }
-
-  return [];
-}
-
-function checkHasNestedPrivateModuleDirSegments(segments: string[]): boolean {
-  let privateModuleDirSegmentsCount = 0;
-
-  for (const segment of segments) {
-    if (segment === PRIVATE_MODULE_DIR_SEGMENT) {
-      privateModuleDirSegmentsCount++;
-    }
-  }
-
-  return privateModuleDirSegmentsCount > 1;
 }

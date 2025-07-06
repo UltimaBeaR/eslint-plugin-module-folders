@@ -1,6 +1,6 @@
 import { Rule } from "eslint";
 import { PRIVATE_MODULE_DIR_SEGMENT } from "../internal/constants";
-import { getCodeFileInfo } from "../internal/codeFileInfo";
+import { getCodeFileInfo } from "../internal/fileInfo/fileInfo";
 import { initFileSystemCache } from "../internal/fileSystemCache";
 
 export const noNestedModulesRule: Rule.RuleModule = {

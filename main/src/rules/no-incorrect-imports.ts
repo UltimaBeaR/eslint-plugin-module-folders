@@ -1,5 +1,4 @@
-import path from "node:path";
-import { CodeFileInfo, getCodeFileInfo } from "../internal/codeFileInfo";
+import { CodeFileInfo, getCodeFileInfo } from "../internal/fileInfo/fileInfo";
 import { PRIVATE_MODULE_DIR_SEGMENT } from "../internal/constants";
 import { Rule } from "eslint";
 import {
